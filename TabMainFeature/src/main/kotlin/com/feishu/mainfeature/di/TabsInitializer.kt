@@ -1,6 +1,6 @@
 package com.feishu.mainfeature.di
 
-import com.feishu.MessageTabRegister
+import com.feishu.mainfeature.tabs.MessageTabRegister
 import com.feishu.mainfeature.tabs.CalendarTab
 import com.feishu.mainfeature.tabs.ProfileTab
 import com.feishu.mainfeature.tabs.WorkplaceTab

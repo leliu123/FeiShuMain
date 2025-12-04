@@ -1,12 +1,8 @@
-package com.feishu
+package com.feishu.mainfeature.tabs
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Message
-import androidx.compose.material.icons.outlined.SmartToy
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
@@ -24,19 +20,7 @@ class MessageTabRegister : TabRegister {
 
     @Composable
     override fun TopBar(navController: NavHostController) {
-        CenterAlignedTopAppBar(
-            title = { Text("消息") },
-            actions = {
-                IconButton(onClick = {
-                    navController.navigate(ROUTE_AI_ONCALL)
-                }) {
-                    Icon(
-                        imageVector = Icons.Outlined.SmartToy,
-                        contentDescription = "AI OnCall"
-                    )
-                }
-            }
-        )
+        // No top bar for this tab
     }
 
     @Composable

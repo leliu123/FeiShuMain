@@ -39,6 +39,11 @@ android {
 }
 
 dependencies {
+    // Module Dependencies
+    implementation(project(":TabInterface"))
+    implementation(project(":AIChat")) // Add dependency to access ROUTE_AI_ONCALL
+
+    // AndroidX & Google Libraries
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -49,11 +54,11 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material3.adaptive.navigation.suite)
-    implementation(libs.androidx.compose.material.icons.extended) // Add the missing dependency
-    implementation(libs.material)
-    implementation(project(":TabInterface"))
-    implementation(project(":AIChat"))
+    implementation(libs.androidx.compose.material.icons.extended) // Add dependency for extended icons
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.material)
+
+    // Testing Libraries
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

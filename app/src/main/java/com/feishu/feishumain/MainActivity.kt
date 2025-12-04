@@ -8,8 +8,6 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.feishu.AIOnCallScreen
-import com.feishu.ROUTE_AI_ONCALL
 import com.feishu.feishumain.ui.theme.FeiShuMainTheme
 import com.feishu.mainfeature.di.initTabs
 import com.feishu.mainfeature.ui.TabContainerScreen
@@ -39,9 +37,6 @@ fun AppNavigation() {
         composable("main_screen") {
             TabContainerScreen(navController = navController)
         }
-        // The destination for the AI chat screen
-        composable(ROUTE_AI_ONCALL) {
-            AIOnCallScreen(navController = navController)
-        }
+
     }
 }
