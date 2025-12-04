@@ -1,10 +1,4 @@
-/**
- * 这是应用的主 UI 框架，是所有 Tab 的“容器”。
- * 它的核心职责是搭建一个包含底部导航栏的通用布局，
- * 并根据用户的选择，动态地展示当前选中的 Tab 所提供的具体内容。
- * 它本身不包含任何具体的业务逻辑，只负责展示和切换，实现了 UI 和业务的分离。
- */
-package com.feishu.mainfeature
+package com.feishu.mainfeature.ui
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
@@ -21,9 +15,15 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
+import com.feishu.mainfeature.di.TabRegistry
 import com.feishu.tabinterface.TabRegister
 
-// 整个 Tab 容器页面
+/**
+ * 这是应用的主 UI 框架，是所有 Tab 的“容器”。
+ * 它的核心职责是搭建一个包含底部导航栏的通用布局，
+ * 并根据用户的选择，动态地展示当前选中的 Tab 所提供的具体内容。
+ * 它本身不包含任何具体的业务逻辑，只负责展示和切换，实现了 UI 和业务的分离。
+ */
 @Composable
 fun TabContainerScreen(
     navController: NavHostController,

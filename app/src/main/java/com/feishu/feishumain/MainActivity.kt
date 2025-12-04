@@ -11,8 +11,8 @@ import androidx.navigation.compose.rememberNavController
 import com.feishu.AIOnCallScreen
 import com.feishu.ROUTE_AI_ONCALL
 import com.feishu.feishumain.ui.theme.FeiShuMainTheme
-import com.feishu.mainfeature.TabContainerScreen
-import com.feishu.mainfeature.initTabs
+import com.feishu.mainfeature.di.initTabs
+import com.feishu.mainfeature.ui.TabContainerScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

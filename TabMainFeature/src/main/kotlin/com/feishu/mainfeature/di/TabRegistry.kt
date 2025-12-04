@@ -1,14 +1,13 @@
+package com.feishu.mainfeature.di
+
+import com.feishu.tabinterface.TabRegister
+
 /**
  * 这是 Tab 的“注册中心”或“户籍系统”。
  * 它使用一个静态的 HashMap 来统一存储和管理 App 中所有可用的 Tab 实例。
  * 通过这种中心化的方式，UI 展示层（TabContainerScreen）可以方便地获取到所有已注册的 Tab，
  * 而无需关心这些 Tab 是在何处、何时被注册的。
  */
-package com.feishu.mainfeature
-
-import com.feishu.tabinterface.TabRegister
-
-// 注册中心：用 HashMap 存所有 Tab
 object TabRegistry {
 
     // key = route（字符串），value = TabRegister 实现类
