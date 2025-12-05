@@ -99,7 +99,7 @@ fun TabContainerScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    // 跳转到AI对话页面
+                    // 跳转到AI对话页面实现
                     navController.navigate("ai_chat")
                 },
                 containerColor = MaterialTheme.colorScheme.primary
