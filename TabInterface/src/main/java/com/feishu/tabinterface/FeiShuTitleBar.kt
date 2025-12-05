@@ -19,7 +19,7 @@ fun FeiShuTitleBar(
     title: String,
     actions: List<TitleBarAction> = emptyList(),
 
-    onSearchClick: (() -> Unit)? = null
+
 ) {
     TopAppBar(
         title = {
