@@ -37,6 +37,8 @@ fun AppNavigation() {
         composable("main_screen") {
             TabContainerScreen(navController = navController)
         }
-
+        composable("ai_chat") {
+            // 这里调用AI小组的组件，AIChatScreen(navController)
+        }
     }
 }

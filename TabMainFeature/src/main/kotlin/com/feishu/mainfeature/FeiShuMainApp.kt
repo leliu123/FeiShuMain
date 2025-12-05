@@ -19,5 +19,3 @@ import androidx.compose.ui.graphics.vector.ImageVector
 fun FeiShuMainApp() {
 
 }
-
-

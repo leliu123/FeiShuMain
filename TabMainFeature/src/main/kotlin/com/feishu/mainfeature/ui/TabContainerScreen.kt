@@ -1,65 +1,87 @@
 package com.feishu.mainfeature.ui
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
+import com.feishu.mainfeature.TabIntent.TabIntent
+import com.feishu.mainfeature.TabViewModel.TabViewModel
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.navigation.NavHostController
-import com.feishu.mainfeature.di.TabRegistry
-import com.feishu.tabinterface.TabRegister
+import android.widget.Toast
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
 
-/**
- * 这是应用的主 UI 框架，是所有 Tab 的“容器”。
- * 它的核心职责是搭建一个包含底部导航栏的通用布局，
- * 并根据用户的选择，动态地展示当前选中的 Tab 所提供的具体内容。
- * 它本身不包含任何具体的业务逻辑，只负责展示和切换，实现了 UI 和业务的分离。
- */
+
 @Composable
 fun TabContainerScreen(
     navController: NavHostController,
+    viewModel: TabViewModel = viewModel()
 ) {
-    // 从注册中心拿所有 Tab
-    val tabs: List<TabRegister> = remember {
-        TabRegistry.getAll()
+    val context = LocalContext.current
+
+    // 只发送Intent，不执行业务逻辑
+    LaunchedEffect(Unit) {
+        viewModel.dispatch(TabIntent.InitializeTabs)
     }
 
-    if (tabs.isEmpty()) {
-        Text("No tabs registered. Did you call initTabs() ?")
+    val state by viewModel.state.collectAsState()
+
+    //根据状态显示错误消息
+    LaunchedEffect(state.error) {
+        state.error?.let { errorMessage ->
+            Toast.makeText(context, "错误: $errorMessage", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    if (state.isLoading && state.tabs.isEmpty()) {
+        Box(
+            modifier = Modifier.fillMaxSize() ,
+            contentAlignment = androidx.compose.ui.Alignment.Center
+        ) {
+            Text("加载中...")
+        }
         return
     }
 
-    // 当前选中的 Tab 的 route
-    var currentRoute by rememberSaveable {
-        mutableStateOf(tabs.first().descriptor.route)
+    if (state.tabs.isEmpty()) {
+        Box(
+            modifier =  Modifier.fillMaxSize() , 
+            contentAlignment = androidx.compose.ui.Alignment.Center
+        ) {
+            Text("没有注册的Tab")
+        }
+        return
     }
 
-    val currentTab = tabs.firstOrNull { it.descriptor.route == currentRoute }
+    val selectedId = state.selectedTabId ?: state.tabs.first().descriptor.id
+    val currentTab = state.tabs.firstOrNull { it.descriptor.id == selectedId }
 
     Scaffold(
         topBar = {
-            // 当前 Tab 画自己的 TopBar
             currentTab?.TopBar(navController)
         },
         bottomBar = {
-            // 底部导航栏
             NavigationBar {
-                tabs.forEach { tab ->
-                    val selected = tab.descriptor.route == currentRoute
+                state.tabs.forEach { tab ->
+                    val selected = tab.descriptor.id == selectedId
                     NavigationBarItem(
                         selected = selected,
                         onClick = {
-                            // 切换当前 Tab
-                            currentRoute = tab.descriptor.route
+                            //只发送Intent，不直接操作状态
+                            viewModel.dispatch(TabIntent.SelectTab(tab.descriptor.id))
                         },
                         icon = {
                             Icon(
@@ -73,11 +95,33 @@ fun TabContainerScreen(
                     )
                 }
             }
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = {
+                    // 跳转到AI对话页面
+                    navController.navigate("ai_chat")
+                },
+                containerColor = MaterialTheme.colorScheme.primary
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.Chat,
+                    contentDescription = "AI助手"
+                )
+            }
         }
     ) { innerPadding ->
         Box(Modifier.padding(innerPadding)) {
-            // 当前 Tab 画自己的 Content
-            currentTab?.Content(navController)
+            if (state.error != null) {
+                Text("错误: ${state.error}")
+            } else {
+                currentTab?.Content(navController)
+            }
         }
     }
 }
+
+
+
+
+
