@@ -46,6 +46,87 @@ class ChatRepository(
             timestamp = this.timestamp
         )
     }
+    private fun  getPrompt():String{
+        return """你是一名具有十年经验的程序员，你能够根据源码解决代码报错问题.
+            |     你具备以下源码
+            |     {1. import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+
+data class TitleBarAction(
+    val icon: ImageVector,
+    val label: String,
+    val onClick: () -> Unit
+)
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun FeiShuTitleBar(
+    modifier: Modifier = Modifier,
+    title: String,
+    actions: List<TitleBarAction> = emptyList(),
+
+
+) {
+    TopAppBar(
+        title = {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge
+            )
+        },
+        actions = {
+
+
+            // 自定义操作按钮
+            actions.forEach { action ->
+                IconButton(onClick = action.onClick) {
+                    Icon(
+                        imageVector = action.icon,
+                        contentDescription = action.label
+                    )
+                }
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            actionIconContentColor = MaterialTheme.colorScheme.onSurface
+        ),
+        modifier = modifier
+    )
+}       
+|       2.package com.feishu.tabinterface
+
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.navigation.NavHostController
+
+// 一张 Tab 的“名片”，定义了 Tab 的所有静态信息
+data class TabDescriptor(
+    val id: String,          // 用来排序、标识，比如 "message"
+    val title: String,       // 底部导航显示的文字，比如 "消息"
+    val icon: ImageVector,   // 底部导航的图标
+    val route: String,       // 作为 HashMap 的 key 和导航路径，比如 "tab/message"
+)
+
+// 所有想被集成到 Tab 容器里的页面，都必须实现这个接口
+// 它定义了一个 Tab 必须具备的动态能力（提供UI界面）
+interface TabRegister {
+    // Tab 必须提供自己的“名片”信息
+    val descriptor: TabDescriptor
+
+    // Tab 必须能自己决定顶部栏（TopBar）长啥样
+    @Composable
+    fun TopBar(navController: NavHostController)
+
+    // Tab 必须能自己决定核心内容区（Content）长啥样
+    @Composable
+    fun Content(navController: NavHostController)
+}
+        """.trimMargin()
+    }
     // 从数据库加载所有消息
     // 从数据库加载所有消息
     fun getAllMessages(): Flow<List<ChatMessage>> {
@@ -148,12 +229,17 @@ class ChatRepository(
         chatHistory: List<ChatMessage>
     ): Flow<Result<String>> = flow{
         try {
-            val messages = chatHistory.map { chatMessage ->
+            //增加系统设定
+            val messages = mutableListOf(
+                Message(role = "system", content = getPrompt())
+            )// 追加历史对话
+            messages += chatHistory.map { chatMessage ->
                 Message(
                     role = if (chatMessage.isUser) "user" else "assistant",
                     content = chatMessage.text
                 )
-            }.toMutableList()
+            }
+
 
             // 添加当前用户消息
             messages.add(Message(role = "user", content = userMessage))
