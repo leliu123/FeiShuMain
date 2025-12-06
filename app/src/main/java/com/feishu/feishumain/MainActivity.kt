@@ -12,6 +12,7 @@ import com.feishu.feishumain.ui.theme.FeiShuMainTheme
 import com.feishu.mainfeature.di.initTabs
 import com.feishu.mainfeature.ui.TabContainerScreen
 import com.feishu.aichat.ui.ChatScreen
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,8 +26,6 @@ class MainActivity : ComponentActivity() {
                 // 2. Set up the app's navigation
                 AppNavigation()
             }
-            //ChatScreen()
-
         }
     }
 }
@@ -40,7 +39,8 @@ fun AppNavigation() {
             TabContainerScreen(navController = navController)
         }
         composable("ai_chat") {
-            // 这里调用AI小组的组件，AIChatScreen(navController)
+            // 这里调用AIChat组件
+            ChatScreen()
         }
     }
 }
