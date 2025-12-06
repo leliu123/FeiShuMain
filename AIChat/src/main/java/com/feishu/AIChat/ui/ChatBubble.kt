@@ -1,4 +1,4 @@
-package com.feishu.AIChat.ui
+package com.feishu.aichat.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -13,7 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.feishu.AIChat.state.ChatMessage
+import com.feishu.aichat.data.ChatMessage
 
 @Composable
 fun ChatBubble(message: ChatMessage) {
@@ -21,12 +21,12 @@ fun ChatBubble(message: ChatMessage) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
-        horizontalAlignment = if (message.isUserMessage) Alignment.End else Alignment.Start
+        horizontalAlignment = if (message.isUser) Alignment.End else Alignment.Start
     ) {
         Box(
             modifier = Modifier
                 .background(
-                    color = if (message.isUserMessage) {
+                    color = if (message.isUser) {
                         MaterialTheme.colorScheme.primary
                     } else {
                         MaterialTheme.colorScheme.surfaceVariant
@@ -37,8 +37,8 @@ fun ChatBubble(message: ChatMessage) {
                 .fillMaxWidth(0.8f)
         ) {
             Text(
-                text = message.content,
-                color = if (message.isUserMessage) {
+                text = message.text,
+                color = if (message.isUser) {
                     MaterialTheme.colorScheme.onPrimary
                 } else {
                     MaterialTheme.colorScheme.onSurface

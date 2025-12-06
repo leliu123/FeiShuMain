@@ -1,4 +1,4 @@
-package com.feishu.AIChat.intent
+package com.feishu.aichat.intent
 
 sealed class ChatIntent {
     // 初始化聊天室（获取历史记录）

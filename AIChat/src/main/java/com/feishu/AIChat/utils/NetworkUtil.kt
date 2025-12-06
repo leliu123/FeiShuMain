@@ -1,4 +1,4 @@
-package com.feishu.AIChat.utils
+package com.feishu.aichat.utils
 
 import android.Manifest
 import android.content.Context

@@ -1,11 +1,7 @@
-package com.feishu.AIChat.state
+package com.feishu.aichat.state
 
-data class ChatMessage(
-    val id: String = "",
-    val content: String = "",
-    val isUserMessage: Boolean = true,
-    val timestamp: Long = System.currentTimeMillis()
-)
+import com.feishu.aichat.data.ChatMessage
+
 
 data class ChatState(
     // 聊天消息列表

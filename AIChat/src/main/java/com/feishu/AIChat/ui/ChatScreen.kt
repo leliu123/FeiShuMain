@@ -1,4 +1,4 @@
-package com.feishu.AIChat.ui
+package com.feishu.aichat.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -29,14 +29,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.feishu.AIChat.intent.ChatIntent
-import com.feishu.AIChat.viewmodel.ChatViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.feishu.aichat.intent.ChatIntent
+import com.feishu.aichat.viewmodel.ChatViewModel
+import com.feishu.aichat.viewmodel.ChatViewModelFactory
 
 @Composable
-fun ChatScreen(viewModel: ChatViewModel) {
+fun ChatScreen(viewModel: ChatViewModel= viewModel(factory = ChatViewModelFactory(LocalContext.current))) {
 
     val state by viewModel.state.collectAsState()
     val listState = rememberLazyListState()

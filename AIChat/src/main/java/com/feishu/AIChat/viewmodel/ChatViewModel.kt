@@ -1,25 +1,26 @@
-package com.feishu.AIChat.viewmodel
+package com.feishu.aichat.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.feishu.AIChat.intent.ChatIntent
-import com.feishu.AIChat.state.ChatMessage
-import com.feishu.AIChat.state.ChatState
-import com.feishu.AIChat.network.ApiService
-import com.feishu.AIChat.network.ChatRequest
-import com.feishu.AIChat.network.StreamResponseParser
+import com.feishu.aichat.intent.ChatIntent
+import com.feishu.aichat.data.ChatMessage
+import com.feishu.aichat.state.ChatState
+import com.feishu.aichat.data.ChatRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.util.UUID
 
-class ChatViewModel(private val apiService: ApiService) : ViewModel() {
+class ChatViewModel(private val chatRepository: ChatRepository= ChatRepository()) : ViewModel() {
 
     // UI状态
     private val _state = MutableStateFlow(ChatState())
     val state: StateFlow<ChatState> = _state.asStateFlow()
-
+    private var messageIdCounter = 0L
     init {
         // 加载聊天记录
         handleIntent(ChatIntent.InitializeChat)
@@ -40,15 +41,31 @@ class ChatViewModel(private val apiService: ApiService) : ViewModel() {
 
         viewModelScope.launch {
             try {
-
-                _state.value = _state.value.copy(
-                    isInitialized = true,
-                    isLoading = false
-                )
+                val messages = chatRepository.getAllMessages().first()
+                if (messages.isNotEmpty()) {
+                    messageIdCounter = (messages.maxOfOrNull { it.id } ?: -1L) + 1
+                    _state.update { currentState ->
+                        currentState.copy(
+                            messages = messages,
+                            isLoading = false,
+                            isInitialized = true
+                        )
+                    }
+                    Log.d("AIChatViewModel", "Loaded ${messages.size} messages from database")
+                } else {
+                    _state.update { currentState ->
+                        currentState.copy(
+                            isLoading = false,
+                            isInitialized = true
+                        )
+                    }
+                }
             } catch (e: Exception) {
+                Log.e("AIChatViewModel", "Error loading messages", e)
                 _state.value = _state.value.copy(
                     errorMessage = "加载失败: ${e.message}",
-                    isLoading = false
+                    isLoading = false,
+                    isInitialized = true
                 )
             }
         }
@@ -58,83 +75,147 @@ class ChatViewModel(private val apiService: ApiService) : ViewModel() {
         // 检查消息是否为空
         if (message.isBlank()) return
 
-        // 添加用户消息
+        // 获取当前消息列表作为历史记录
+        val currentMessages = _state.value.messages.toMutableList()
+
+        // 创建用户消息
+        val userMessageId = messageIdCounter++
         val userMessage = ChatMessage(
-            id = UUID.randomUUID().toString(),
-            content = message,
-            isUserMessage = true
+            id = userMessageId,
+            text = message,
+            isUser = true
         )
 
-        val currentMessages = _state.value.messages.toMutableList()
+        // 保存用户消息到数据库
+        viewModelScope.launch {
+            chatRepository.saveMessage(userMessage)
+            Log.d("AIChatViewModel", "Saved user message with ID: $userMessageId")
+        }
+
+        // 添加用户消息到列表
         currentMessages.add(userMessage)
 
+        // 创建 AI 消息占位符
+        val assistantMessageId = messageIdCounter++
+        val assistantMessage = ChatMessage(
+            id = assistantMessageId,
+            text = "",
+            isUser = false,
+            isLoading = true
+        )
+
+        // 更新状态：添加用户消息和空的 AI 消息
         _state.value = _state.value.copy(
-            messages = currentMessages,
+            messages = currentMessages + assistantMessage,
             currentInput = "",
             isWaitingForResponse = true,
             errorMessage = null
         )
 
-        // 异步请求AI回复
+        // 异步请求AI回复（流式）
         viewModelScope.launch {
             try {
-                // 准备请求体
-                val request = ChatRequest(
-                    messages = buildMessages(currentMessages)
-                )
-
-                // 调用API获取响应
-                val response = apiService.chatStream(request)
-
-                // 处理响应
                 val aiReplyBuilder = StringBuilder()
-                response.body()?.byteStream()?.use { stream ->
-                    val parser = StreamResponseParser()
-                    parser.parse(stream) { chunk ->
-                        aiReplyBuilder.append(chunk)
-                        updateAIMessage(aiReplyBuilder.toString())
+                
+                // 使用 Repository 的流式方法
+                chatRepository.sendMessageStream(message, currentMessages)
+                    .catch { e ->
+                        Log.e("AIChatViewModel", "Stream error", e)
+                        _state.update { currentState ->
+                            currentState.copy(
+                                errorMessage = "请求失败: ${e.message}",
+                                isWaitingForResponse = false
+                            )
+                        }
+                        // 移除加载中的 AI 消息
+                        removeLoadingAIMessage()
                     }
-                }
+                    .collect { result ->
+                        result.fold(
+                            onSuccess = { chunk ->
+                                // 累积流式响应内容
+                                aiReplyBuilder.append(chunk)
+                                // 更新 AI 消息内容
+                                updateAIMessage(assistantMessageId, aiReplyBuilder.toString())
+                            },
+                            onFailure = { error ->
+                                Log.e("AIChatViewModel", "API error", error)
+                                _state.update { currentState ->
+                                    currentState.copy(
+                                        errorMessage = "请求失败: ${error.message}",
+                                        isWaitingForResponse = false
+                                    )
+                                }
+                                // 移除加载中的 AI 消息
+                                removeLoadingAIMessage()
+                            }
+                        )
+                    }
 
-                // 响应完成
-                _state.value = _state.value.copy(
-                    isWaitingForResponse = false
+                // 流式响应完成，保存最终的 AI 消息到数据库
+                val finalAIMessage = ChatMessage(
+                    id = assistantMessageId,
+                    text = aiReplyBuilder.toString(),
+                    isUser = false,
+                    isLoading = false
                 )
+                chatRepository.saveMessage(finalAIMessage)
+                Log.d("AIChatViewModel", "Saved AI message with ID: $assistantMessageId")
+
+                // 更新状态：完成响应
+                _state.update { currentState ->
+                    currentState.copy(
+                        isWaitingForResponse = false
+                    )
+                }
             } catch (e: Exception) {
+                Log.e("AIChatViewModel", "Error sending message", e)
                 _state.value = _state.value.copy(
                     errorMessage = "请求失败: ${e.message}",
                     isWaitingForResponse = false
                 )
+                // 移除加载中的 AI 消息
+                removeLoadingAIMessage()
             }
         }
     }
 
-    private fun updateAIMessage(content: String) {
-        val messages = _state.value.messages.toMutableList()
-
-        // 最后一条是AI消息，则更新
-        if (messages.isNotEmpty() && !messages.last().isUserMessage) {
-            messages[messages.size - 1] = messages.last().copy(content = content)
-        } else {
-            messages.add(ChatMessage(
-                id = UUID.randomUUID().toString(),
-                content = content,
-                isUserMessage = false
-            ))
+    private fun updateAIMessage(messageId: Long, content: String) {
+        _state.update { currentState ->
+            val messages = currentState.messages.toMutableList()
+            // 找到对应的 AI 消息并更新
+            val index = messages.indexOfFirst { it.id == messageId && !it.isUser }
+            if (index != -1) {
+                messages[index] = messages[index].copy(
+                    text = content,
+                    isLoading = false
+                )
+            }
+            currentState.copy(messages = messages)
         }
+    }
 
-        _state.value = _state.value.copy(messages = messages)
+    private fun removeLoadingAIMessage() {
+        _state.update { currentState ->
+            val messages = currentState.messages.filterNot { !it.isUser && it.isLoading }
+            currentState.copy(messages = messages)
+        }
     }
 
     private fun clearChat() {
         _state.value = _state.value.copy(
             messages = emptyList(),
             currentInput = "",
-            errorMessage = null
+            errorMessage = null,
+            isWaitingForResponse = false
         )
         viewModelScope.launch {
             try {
+                chatRepository.clearAllMessages()
+                messageIdCounter = 0L
+                Log.d("AIChatViewModel", "Cleared all messages")
             } catch (e: Exception) {
+                Log.e("AIChatViewModel", "Error clearing messages", e)
                 _state.value = _state.value.copy(
                     errorMessage = "清空失败: ${e.message}"
                 )
@@ -156,14 +237,5 @@ class ChatViewModel(private val apiService: ApiService) : ViewModel() {
 
     fun updateInput(newInput: String) {
         _state.value = _state.value.copy(currentInput = newInput)
-    }
-
-    private fun buildMessages(messages: List<ChatMessage>): List<Map<String, String>> {
-        return messages.map { message ->
-            mapOf(
-                "role" to if (message.isUserMessage) "user" else "assistant",
-                "content" to message.content
-            )
-        }
     }
 }
