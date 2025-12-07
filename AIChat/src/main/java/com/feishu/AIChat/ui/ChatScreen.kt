@@ -121,7 +121,9 @@ fun ChatScreen(viewModel: ChatViewModel= viewModel(factory = ChatViewModelFactor
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(state.messages) { message ->
-                    ChatBubble(message)
+                    if (!message.text.isEmpty()){
+                        ChatBubble(message)
+                    }
                 }
 
                 // 显示指示器
