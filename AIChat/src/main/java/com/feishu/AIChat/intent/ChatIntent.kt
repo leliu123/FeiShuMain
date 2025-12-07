@@ -10,9 +10,6 @@ sealed class ChatIntent {
     // 清空聊天记录
     data object ClearChat : ChatIntent()
 
-    // 重新加载
-    data object Reload : ChatIntent()
-
     // 停止当前请求
     data object StopRequesting : ChatIntent()
 }
