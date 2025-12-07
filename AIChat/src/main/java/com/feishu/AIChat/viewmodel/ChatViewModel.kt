@@ -7,6 +7,7 @@ import com.feishu.aichat.intent.ChatIntent
 import com.feishu.aichat.data.ChatMessage
 import com.feishu.aichat.state.ChatState
 import com.feishu.aichat.data.ChatRepository
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,6 +15,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
 
 class ChatViewModel(private val chatRepository: ChatRepository= ChatRepository()) : ViewModel() {
 
@@ -21,6 +23,8 @@ class ChatViewModel(private val chatRepository: ChatRepository= ChatRepository()
     private val _state = MutableStateFlow(ChatState())
     val state: StateFlow<ChatState> = _state.asStateFlow()
     private var messageIdCounter = 0L
+    private var currentAiRequestJob: Job? = null
+
     init {
         // 加载聊天记录
         handleIntent(ChatIntent.InitializeChat)
@@ -28,11 +32,10 @@ class ChatViewModel(private val chatRepository: ChatRepository= ChatRepository()
 
     fun handleIntent(intent: ChatIntent) {
         when (intent) {
-            ChatIntent.InitializeChat -> initializeChat()
+            is ChatIntent.InitializeChat -> initializeChat()
             is ChatIntent.SendMessage -> sendMessage(intent.message)
-            ChatIntent.ClearChat -> clearChat()
-            ChatIntent.Reload -> reload()
-            ChatIntent.StopRequesting -> stopRequesting()
+            is ChatIntent.ClearChat -> clearChat()
+            is ChatIntent.StopRequesting -> stopRequesting()
         }
     }
 
@@ -113,7 +116,7 @@ class ChatViewModel(private val chatRepository: ChatRepository= ChatRepository()
         )
 
         // 异步请求AI回复（流式）
-        viewModelScope.launch {
+        currentAiRequestJob = viewModelScope.launch {
             try {
                 val aiReplyBuilder = StringBuilder()
                 
@@ -168,14 +171,18 @@ class ChatViewModel(private val chatRepository: ChatRepository= ChatRepository()
                         isWaitingForResponse = false
                     )
                 }
+                currentAiRequestJob = null
             } catch (e: Exception) {
                 Log.e("AIChatViewModel", "Error sending message", e)
-                _state.value = _state.value.copy(
-                    errorMessage = "请求失败: ${e.message}",
-                    isWaitingForResponse = false
-                )
+                if (e !is CancellationException){
+                    _state.value = _state.value.copy(
+                        errorMessage = "请求失败: ${e.message}",
+                        isWaitingForResponse = false
+                    )
+                }
                 // 移除加载中的 AI 消息
                 removeLoadingAIMessage()
+                currentAiRequestJob = null
             }
         }
     }
@@ -232,7 +239,10 @@ class ChatViewModel(private val chatRepository: ChatRepository= ChatRepository()
     }
 
     private fun stopRequesting() {
+        currentAiRequestJob?.cancel()
+        currentAiRequestJob = null
         _state.value = _state.value.copy(isWaitingForResponse = false)
+        removeLoadingAIMessage()
     }
 
     fun updateInput(newInput: String) {
