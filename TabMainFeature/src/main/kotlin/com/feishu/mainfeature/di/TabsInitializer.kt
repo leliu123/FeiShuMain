@@ -4,6 +4,7 @@ import com.feishu.mainfeature.tabs.MessageTabRegister
 import com.feishu.mainfeature.tabs.CalendarTab
 import com.feishu.mainfeature.tabs.ProfileTab
 import com.feishu.mainfeature.tabs.WorkplaceTab
+import com.feishu.tabfeatures.message.MessageTabProvider
 
 /**
  * 这是 App 的“初始化程序”。
@@ -12,7 +13,7 @@ import com.feishu.mainfeature.tabs.WorkplaceTab
  * 每当需要新增或移除一个主界面的 Tab 时，主要修改的就是这个文件。
 // */
 fun initTabs() {
-    TabRegistry.register(MessageTabRegister()) // The original Message Tab
+    TabRegistry.register(MessageTabProvider()) // The original Message Tab
     TabRegistry.register(CalendarTab())      // The new Calendar Tab
     TabRegistry.register(WorkplaceTab())     // The new Workplace Tab
     TabRegistry.register(ProfileTab())       // The new Profile Tab

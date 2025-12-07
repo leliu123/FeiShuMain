@@ -9,7 +9,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object NetworkModule {
-    // TODO: 将 API Key 和 Base URL 移到配置文件或环境变量中
+
     private const val BASE_URL = "https://ark.cn-beijing.volces.com/" // 根据你的 API 提供商修改
     private const val API_KEY = "b8743a58-3553-47dc-b6ea-b6675360f777" // 需要替换为实际的 API Key
 
