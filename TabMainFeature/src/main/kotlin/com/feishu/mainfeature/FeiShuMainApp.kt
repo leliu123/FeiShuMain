@@ -1,21 +1,31 @@
 package com.feishu.mainfeature
 
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.feishu.aichat.ui.ChatScreen
+import com.feishu.mainfeature.navigation.ROUTE_AI_CHAT
+import com.feishu.mainfeature.navigation.ROUTE_MAIN
+import com.feishu.mainfeature.ui.TabContainerScreen
 
+/**
+ * Standalone entry point for the TabMainFeature module. This mirrors the host application's
+ * navigation setup so previews/tests can exercise the tab container and the AI chat surface.
+ */
 @Composable
 fun FeiShuMainApp() {
+    val navController = rememberNavController()
 
+    NavHost(
+        navController = navController,
+        startDestination = ROUTE_MAIN
+    ) {
+        composable(ROUTE_MAIN) {
+            TabContainerScreen(navController = navController)
+        }
+        composable(ROUTE_AI_CHAT) {
+            ChatScreen()
+        }
+    }
 }

@@ -12,12 +12,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavHostController
 import com.feishu.mainfeature.TabIntent.TabIntent
 import com.feishu.mainfeature.TabViewModel.TabViewModel
+import com.feishu.mainfeature.navigation.ROUTE_AI_CHAT
 import kotlinx.coroutines.flow.collectLatest
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.foundation.layout.Box
@@ -86,7 +87,7 @@ fun TabContainerScreen(
             // AI助手按钮 - 带动画
             AnimatedFloatingActionButton(
                 onClick = {
-                    navController.navigate("ai_chat")
+                    navController.navigate(ROUTE_AI_CHAT)
                 }
             )
         }

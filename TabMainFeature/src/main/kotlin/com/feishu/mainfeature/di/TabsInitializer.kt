@@ -15,6 +15,5 @@ import com.feishu.tabfeatures.message.MessageTabProvider
 fun initTabs() {
     TabRegistry.register(MessageTabProvider()) // The original Message Tab
     TabRegistry.register(CalendarTab())      // The new Calendar Tab
-    TabRegistry.register(WorkplaceTab())     // The new Workplace Tab
     TabRegistry.register(ProfileTab())       // The new Profile Tab
 }
