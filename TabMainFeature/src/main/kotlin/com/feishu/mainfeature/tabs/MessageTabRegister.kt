@@ -81,13 +81,17 @@ class MessageTabRegister : TabRegister {
 
     @Composable
     override fun Content(navController: NavHostController) {
-        MessageHome(navController)
+        MessageHome(
+            onEnterChat = { _ -> navController.navigate(ROUTE_AI_CHAT) }
+        )
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun MessageHome(navController: NavHostController) {
+fun MessageHome(
+    onEnterChat: (Conversation?) -> Unit
+) {
     val filters = remember { listOf("全部", "未读", "公告", "机器人") }
     var selectedFilter by rememberSaveable { mutableStateOf(filters.first()) }
     var query by rememberSaveable { mutableStateOf("") }
@@ -155,13 +159,13 @@ private fun MessageHome(navController: NavHostController) {
         MessageSearchBar(
             query = query,
             onQueryChange = { query = it },
-            onAIEntry = { navController.navigate(ROUTE_AI_CHAT) }
+            onEnterChat = { onEnterChat(null) }
         )
         Spacer(modifier = Modifier.height(12.dp))
         MessageQuickActions(
             onActionClick = { action ->
                 when (action.type) {
-                    QuickActionType.StartChat -> navController.navigate(ROUTE_AI_CHAT)
+                    QuickActionType.StartChat -> onEnterChat(null)
                     QuickActionType.CreateGroup,
                     QuickActionType.InviteMember,
                     QuickActionType.Announcement -> {
@@ -186,11 +190,10 @@ private fun MessageHome(navController: NavHostController) {
     } else {
         ConversationList(
             conversations = filteredConversations,
-                onConversationClick = { conversation ->
-                    activeConversation = conversation
-                }
-            )
-        }
+            onConversationClick = { conversation ->
+                activeConversation = conversation
+            }
+        )
     }
 
     activeConversation?.let { conversation ->
@@ -212,7 +215,7 @@ private fun MessageHome(navController: NavHostController) {
                 },
                 onEnterChat = {
                     activeConversation = null
-                    navController.navigate(ROUTE_AI_CHAT)
+                    onEnterChat(conversation)
                 },
                 onDismiss = { activeConversation = null }
             )
@@ -280,13 +283,16 @@ private fun MessageHome(navController: NavHostController) {
             }
         }
     }
+
+    // End of main column
+    }
 }
 
 @Composable
 private fun MessageSearchBar(
     query: String,
     onQueryChange: (String) -> Unit,
-    onAIEntry: () -> Unit
+    onEnterChat: () -> Unit
 ) {
     OutlinedTextField(
         value = query,
@@ -296,8 +302,8 @@ private fun MessageSearchBar(
             Icon(imageVector = Icons.Outlined.Search, contentDescription = "搜索")
         },
         trailingIcon = {
-            TextButton(onClick = { if (query.isNotEmpty()) onQueryChange("") else onAIEntry() }) {
-                Text(text = if (query.isNotEmpty()) "清空" else "AI 助手")
+            TextButton(onClick = { if (query.isNotEmpty()) onQueryChange("") else onEnterChat() }) {
+                Text(text = if (query.isNotEmpty()) "清空" else "发起会话")
             }
         },
         placeholder = { Text(text = "搜索会话、群聊或文档") },
@@ -597,7 +603,7 @@ private fun QuickActionDialog(
     )
 }
 
-private data class Conversation(
+data class Conversation(
     val id: String,
     val title: String,
     val snippet: String,

@@ -1,6 +1,5 @@
 package com.feishu.mainfeature.di
 
-import com.feishu.mainfeature.tabs.MessageTabRegister
 import com.feishu.mainfeature.tabs.CalendarTab
 import com.feishu.mainfeature.tabs.ProfileTab
 import com.feishu.mainfeature.tabs.WorkplaceTab
@@ -13,7 +12,7 @@ import com.feishu.tabfeatures.message.MessageTabProvider
  * 每当需要新增或移除一个主界面的 Tab 时，主要修改的就是这个文件。
 // */
 fun initTabs() {
-    TabRegistry.register(MessageTabProvider()) // The original Message Tab
+    TabRegistry.register(MessageTabProvider()) // Message Tab (with enhanced UI)
     TabRegistry.register(CalendarTab())      // The new Calendar Tab
     TabRegistry.register(ProfileTab())       // The new Profile Tab
 }
