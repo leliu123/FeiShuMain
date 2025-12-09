@@ -6,6 +6,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.feishu.aichat.data.database.Dao.ChatMessageDao
 
+
 @Database(
     entities = [ChatMessageEntity::class],
     version = 1,

@@ -17,7 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import com.feishu.aichat.data.ChatMessage
-
+import dev.jeziellago.compose.markdowntext.MarkdownText
 @Composable
 fun ChatBubble(message: ChatMessage) {
     val screenWidthDp = LocalConfiguration.current.screenWidthDp.dp
@@ -44,16 +44,19 @@ fun ChatBubble(message: ChatMessage) {
                     max = maxBubbleWidth
                 )
                 .wrapContentWidth()
-        ) {
+        ) {if(message.isUser){
             Text(
                 text = message.text,
-                color = if (message.isUser) {
-                    MaterialTheme.colorScheme.onPrimary
-                } else {
-                    MaterialTheme.colorScheme.onSurface
-                },
+                color = MaterialTheme.colorScheme.onPrimary,
                 style = MaterialTheme.typography.bodyMedium
             )
+        }
+            else{
+                MarkdownText(
+                    markdown =message.text,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+        }
         }
     }
 }

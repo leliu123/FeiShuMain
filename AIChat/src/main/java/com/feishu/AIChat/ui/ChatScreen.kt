@@ -37,6 +37,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.feishu.aichat.intent.ChatIntent
 import com.feishu.aichat.viewmodel.ChatViewModel
 import com.feishu.aichat.viewmodel.ChatViewModelFactory
+import dev.jeziellago.compose.markdowntext.MarkdownText
 
 @Composable
 fun ChatScreen(viewModel: ChatViewModel= viewModel(factory = ChatViewModelFactory(LocalContext.current))) {

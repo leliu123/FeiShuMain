@@ -92,5 +92,8 @@ dependencies {
     testImplementation("org.mockito:mockito-core:5.11.0")
     testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
 
+    //markdown渲染
+    implementation("com.github.jeziellago:compose-markdown:0.5.8")
+
 
 }
