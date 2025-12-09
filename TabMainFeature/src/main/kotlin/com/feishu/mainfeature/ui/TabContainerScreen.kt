@@ -1,5 +1,6 @@
 package com.feishu.mainfeature.ui
 import android.widget.Toast
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.FloatingActionButton
@@ -10,8 +11,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
@@ -30,8 +41,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.filled.AllInclusive
 import androidx.compose.material3.*
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.unit.dp
-import androidx.compose.runtime.*
+
 import androidx.compose.ui.graphics.graphicsLayer
 import kotlinx.coroutines.delay
 
@@ -82,22 +92,29 @@ fun TabContainerScreen(
                     viewModel.dispatch(TabIntent.SelectTab(tabId))
                 }
             )
-        },
-        floatingActionButton = {
-            // AI助手按钮 - 带动画
-            AnimatedFloatingActionButton(
-                onClick = {
-                    navController.navigate(ROUTE_AI_CHAT)
-                }
-            )
         }
     ) { innerPadding ->
         // 使用动画化的Tab内容
-        AnimatedTabContent(
-            state = state,
-            navController = navController,
-            modifier = Modifier.padding(innerPadding)
-        )
+        Box(modifier = Modifier.fillMaxSize()) {
+            AnimatedTabContent(
+                state = state,
+                navController = navController,
+                modifier = Modifier.padding(innerPadding)
+            )
+            
+            // 可拖拽的 AI 按钮（在内容区域内）
+            Box(modifier = Modifier.padding(innerPadding)) {
+                DraggableFloatingActionButton(
+                    position = state.fabPosition,
+                    onPositionChange = { newPosition ->
+                        viewModel.dispatch(TabIntent.UpdateFabPosition(newPosition))
+                    },
+                    onClick = {
+                        navController.navigate(ROUTE_AI_CHAT)
+                    }
+                )
+            }
+        }
     }
 }
 
@@ -242,33 +259,118 @@ private fun AnimatedTabContent(
     }
 }
 /**
- * 动画悬浮按钮
+ * 可拖拽的悬浮按钮
  */
 @Composable
-private fun AnimatedFloatingActionButton(
+private fun DraggableFloatingActionButton(
+    position: Offset?,
+    onPositionChange: (Offset) -> Unit,
     onClick: () -> Unit
 ) {
-    var isRotating by remember { mutableStateOf(false) }
-    val rotation by animateFloatAsState(
-        targetValue = if (isRotating) 360f else 0f,
+    val density = LocalDensity.current
+    
+    // FAB 默认大小（56.dp）
+    val fabSize = with(density) { 56.dp.toPx() }
+    val fabRadius = fabSize / 2f
+    
+    var currentPosition by remember { mutableStateOf<Offset?>(null) }
+    var isDragging by remember { mutableStateOf(false) }
+    var containerSize by remember { mutableStateOf(IntSize.Zero) }
+    
+    // 限制位置在容器范围内（边缘对齐，不是中心对齐）
+    fun constrainPosition(offset: Offset): Offset {
+        // 按钮中心点的约束范围
+        // 左边缘不能超出：pos.x - fabRadius >= 0，所以 pos.x >= fabRadius
+        // 右边缘不能超出：pos.x + fabRadius <= containerSize.width，所以 pos.x <= containerSize.width - fabRadius
+        // 上边缘不能超出：pos.y - fabRadius >= 0，所以 pos.y >= fabRadius
+        // 下边缘不能超出：pos.y + fabRadius <= containerSize.height，所以 pos.y <= containerSize.height - fabRadius
+        val minX = fabRadius
+        val maxX = containerSize.width - fabRadius
+        val minY = fabRadius
+        val maxY = containerSize.height - fabRadius
+        
+        return Offset(
+            offset.x.coerceIn(minX, maxX),
+            offset.y.coerceIn(minY, maxY)
+        )
+    }
+    
+    // 计算默认位置（右下角，底部和右边缘贴着容器边缘）
+    fun getDefaultPosition(): Offset {
+        val horizontalPadding = with(density) { 16.dp.toPx() }
+        val verticalPadding = with(density) { 80.dp.toPx() } // 增加底部距离，让按钮更靠上
+        // 右边缘距离右边界 padding：pos.x + fabRadius = containerSize.width - padding
+        // 所以 pos.x = containerSize.width - fabRadius - padding
+        val defaultX = containerSize.width - fabRadius - horizontalPadding
+        // 底边缘距离底边界 padding：pos.y + fabRadius = containerSize.height - padding
+        // 所以 pos.y = containerSize.height - fabRadius - padding
+        val defaultY = containerSize.height - fabRadius - verticalPadding
+        return constrainPosition(Offset(defaultX, defaultY))
+    }
+    
+    // 初始化或更新位置
+    LaunchedEffect(containerSize, position) {
+        if (containerSize.width > 0 && containerSize.height > 0) {
+            val targetPosition = position ?: getDefaultPosition()
+            if (currentPosition == null || position != null) {
+                currentPosition = constrainPosition(targetPosition)
+            }
+        }
+    }
+    
+    var rotation by remember { mutableStateOf(0f) }
+    val animatedRotation by animateFloatAsState(
+        targetValue = if (isDragging) 360f else rotation,
         animationSpec = tween(durationMillis = 600)
     )
-
-    FloatingActionButton(
-        onClick = {
-            isRotating = !isRotating
-            onClick()
-        },
-        modifier = Modifier.graphicsLayer {
-            rotationZ = rotation
-        },
-        containerColor = MaterialTheme.colorScheme.primary,
-        contentColor = MaterialTheme.colorScheme.onPrimary
+    
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .onGloballyPositioned { coordinates ->
+                containerSize = coordinates.size
+            }
     ) {
-        Icon(
-            imageVector = Icons.Filled.AllInclusive    ,
-            contentDescription = "AI助手"
-        )
+        currentPosition?.let { pos ->
+            FloatingActionButton(
+                onClick = {
+                    if (!isDragging) {
+                        rotation += 360f
+                        onClick()
+                    }
+                },
+                modifier = Modifier
+                    .offset(
+                        x = with(density) { (pos.x - fabRadius).toDp() },
+                        y = with(density) { (pos.y - fabRadius).toDp() }
+                    )
+                    .pointerInput(Unit) {
+                        detectDragGesturesAfterLongPress(
+                            onDragStart = {
+                                isDragging = true
+                            },
+                            onDragEnd = {
+                                isDragging = false
+                                // 保存最终位置
+                                onPositionChange(currentPosition!!)
+                            }
+                        ) { change, dragAmount ->
+                            val newPosition = constrainPosition(currentPosition!! + dragAmount)
+                            currentPosition = newPosition
+                        }
+                    }
+                    .graphicsLayer {
+                        rotationZ = animatedRotation
+                    },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.AllInclusive,
+                    contentDescription = "AI助手"
+                )
+            }
+        }
     }
 }
 

@@ -53,6 +53,12 @@ class TabViewModel : ViewModel() {
                 }
             }
 
+            is TabIntent.UpdateFabPosition -> {
+                viewModelScope.launch {
+                    _state.value = _state.value.copy(fabPosition = intent.position)
+                }
+            }
+
             is TabIntent.ToAIChat,
             is TabIntent.ExitAIChat -> {
                 // 这里不处理导航

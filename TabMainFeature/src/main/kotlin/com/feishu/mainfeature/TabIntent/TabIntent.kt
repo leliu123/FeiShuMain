@@ -1,5 +1,6 @@
 package com.feishu.mainfeature.TabIntent
 
+import androidx.compose.ui.geometry.Offset
 
 sealed class TabIntent {
     // 初始化 Tab 列表（启动时调用）
@@ -17,4 +18,7 @@ sealed class TabIntent {
 
     // 清除错误
     object ClearError : TabIntent()
+
+    // 更新 AI 按钮位置
+    data class UpdateFabPosition(val position: Offset) : TabIntent()
 }
