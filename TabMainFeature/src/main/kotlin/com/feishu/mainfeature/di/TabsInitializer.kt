@@ -2,8 +2,9 @@ package com.feishu.mainfeature.di
 
 import com.feishu.mainfeature.tabs.CalendarTab
 import com.feishu.mainfeature.tabs.ProfileTab
-import com.feishu.mainfeature.tabs.WorkplaceTab
+
 import com.feishu.tabfeatures.message.MessageTabProvider
+import com.feishu.tabfeatures.stock.StockTabProvider
 
 /**
  * 这是 App 的“初始化程序”。
@@ -14,5 +15,8 @@ import com.feishu.tabfeatures.message.MessageTabProvider
 fun initTabs() {
     TabRegistry.register(MessageTabProvider()) // Message Tab (with enhanced UI)
     TabRegistry.register(CalendarTab())      // The new Calendar Tab
+    TabRegistry.register(StockTabProvider()) // The new Stock Tab
     TabRegistry.register(ProfileTab())       // The new Profile Tab
+
+
 }
